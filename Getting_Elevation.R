@@ -78,3 +78,54 @@ readcleanrawdata = function(rawpath)
   
   return(data_with_alt)
 }
+
+########################################################
+
+completelistcheck = function(data)
+{
+  require(tidyverse)
+  require(lubridate)
+  
+  # create 2 columns from the "TIME.OBSERVATIONS.STARTED' column
+  temp = data.frame(data$TIME.OBSERVATIONS.STARTED)
+  temp = temp %>%
+    separate(data.TIME.OBSERVATIONS.STARTED, c("hr","min"))
+  data = cbind(data,temp)
+  
+  # calculate speed and species/unit time (sut)
+  data = data %>%
+    mutate(speed = EFFORT.DISTANCE.KM*60/DURATION.MINUTES,
+           sut = no.sp*60/DURATION.MINUTES) %>%
+    mutate(hr = as.numeric(hr), min = as.numeric(min)) %>%
+    mutate(end = floor((hr*60+min+DURATION.MINUTES)/60)) # caluclate time checklist ended
+  
+  temp = data %>%
+    filter(ALL.SPECIES.REPORTED == 1, PROTOCOL.TYPE != "Incidental") %>%
+    group_by(group.id) %>% slice(1)
+  
+  # exclude any list that may in fact be incomplete
+  # set threshholds for speed and sut
+  
+  vel = 20
+  time = 2
+  
+  # choose checklists without info on duration with 3 or fewers species
+  grp = temp %>%
+    filter(no.sp <= 3, is.na(DURATION.MINUTES)) %>%
+    distinct(group.id)
+  grp = grp$group.id
+  
+  # exclude records based on verious criteria 
+  data = data %>%
+    mutate(ALL.SPECIES.REPORTED = 
+             case_when(ALL.SPECIES.REPORTED == 1 & (group.id %in% grp | speed > vel |
+                                                      (sut < time & no.sp <= 3) | 
+                                                      PROTOCOL.TYPE == "Incidental" | 
+                                                      (!is.na(hr) & ((hr <= 4 & end <= 4) | 
+                                                                       (hr >= 20 & end <= 28)))) ~ 0, 
+                       ALL.SPECIES.REPORTED == 0 ~ 0,
+                       TRUE ~ 1))
+  
+  data = data %>%
+    dplyr::select(-speed,-sut,-hr,-min,-end)
+}
