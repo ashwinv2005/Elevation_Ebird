@@ -7,7 +7,8 @@ library(raster)
 
 x<-getData('alt', country = "IND", download = F, mask = F)
 z<-getData('alt', country = "NPL", download = F, mask = F)
-bb<-raster::merge(x,z)
+y<-getData('alt', country = "BTN", download = F, mask = F)
+bb<-raster::merge(x,y,z)
 
 readcleanrawdata = function(rawpath)
 {
@@ -26,7 +27,7 @@ readcleanrawdata = function(rawpath)
   #  read_ebd()
   
   preimp = c("COMMON.NAME","OBSERVATION.COUNT",
-             "LOCALITY.ID","LOCALITY.TYPE",
+             "LOCALITY.ID","LOCALITY.TYPE", "STATE", "COUNTRY",
              "LATITUDE","LONGITUDE","OBSERVATION.DATE","TIME.OBSERVATIONS.STARTED","OBSERVER.ID",
              "PROTOCOL.TYPE","DURATION.MINUTES","EFFORT.DISTANCE.KM",
              "NUMBER.OBSERVERS","ALL.SPECIES.REPORTED","GROUP.IDENTIFIER","SAMPLING.EVENT.IDENTIFIER","APPROVED","CATEGORY")
@@ -41,7 +42,7 @@ readcleanrawdata = function(rawpath)
   ## choosing important variables
   
   imp = c("COMMON.NAME","OBSERVATION.COUNT",
-          "LOCALITY.ID","LOCALITY.TYPE",
+          "LOCALITY.ID","LOCALITY.TYPE", "STATE", "COUNTRY", 
           "LATITUDE","LONGITUDE","OBSERVATION.DATE","TIME.OBSERVATIONS.STARTED","OBSERVER.ID",
           "PROTOCOL.TYPE","DURATION.MINUTES","EFFORT.DISTANCE.KM",
           "NUMBER.OBSERVERS","ALL.SPECIES.REPORTED","group.id")
