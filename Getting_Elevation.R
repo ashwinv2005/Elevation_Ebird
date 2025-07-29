@@ -1,20 +1,17 @@
-setwd("D:/Post_NCBS/NCF/migration")
-
 library(raster)
 
 ## use getData to download DEM for India and save working directory (download = F after first time)
 ## download rasters for countries of interest
 
-x<-getData('alt', country = "IND", download = F, mask = F)
-z<-getData('alt', country = "NPL", download = F, mask = F)
-bb<-raster::merge(x,z)
-
-readcleanrawdata = function(rawpath)
+readcleanrawdata = function(rawpath,sensitivepath)
 {
   require(lubridate)
   require(tidyverse)
-  require(cowplot)
   
+  x<-getData('alt', country = "IND", download = F, mask = F)
+  z<-getData('alt', country = "NPL", download = T, mask = F)
+  bb<-raster::merge(x,z)
+
   #library(auk)
   
   #allin = system.file("extdata/ebd_IN_relMay-2018.txt", package = "auk")
@@ -29,7 +26,8 @@ readcleanrawdata = function(rawpath)
              "LOCALITY.ID","LOCALITY.TYPE",
              "LATITUDE","LONGITUDE","OBSERVATION.DATE","TIME.OBSERVATIONS.STARTED","OBSERVER.ID",
              "PROTOCOL.TYPE","DURATION.MINUTES","EFFORT.DISTANCE.KM",
-             "NUMBER.OBSERVERS","ALL.SPECIES.REPORTED","GROUP.IDENTIFIER","SAMPLING.EVENT.IDENTIFIER","APPROVED","CATEGORY")
+             "NUMBER.OBSERVERS","ALL.SPECIES.REPORTED","GROUP.IDENTIFIER","SAMPLING.EVENT.IDENTIFIER","APPROVED",
+             "CATEGORY")
   
   nms = read.delim(rawpath, nrows = 1, sep = "\t", header = T, quote = "", stringsAsFactors = F, na.strings = c(""," ",NA))
   nms = names(nms)
@@ -37,6 +35,8 @@ readcleanrawdata = function(rawpath)
   nms[nms %in% preimp] = NA
   
   data = read.delim(rawpath, colClasses = nms, sep = "\t", header = T, quote = "", stringsAsFactors = F, na.strings = c(""," ",NA))
+  data1 = read.delim(sensitivepath, colClasses = nms, sep = "\t", header = T, quote = "", stringsAsFactors = F, na.strings = c(""," ",NA))
+  data = rbind(data,data1)
   
   ## choosing important variables
   
@@ -72,7 +72,8 @@ readcleanrawdata = function(rawpath)
   dat<-cbind(dat, alt = raster::extract(bb, dat))
   
   data_with_alt<-merge(data,dat, by = c("LATITUDE","LONGITUDE"))
-  #data_with_alt$alt[is.na(data_with_alt$alt)] <- 0
+  data = data %>%
+    mutate(alt = ifelse(is.na(alt), 0, alt))
   
   
   return(data_with_alt)
