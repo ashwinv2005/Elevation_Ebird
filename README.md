@@ -1,1 +1,1 @@
-# Elevation_eBird
+# About getting elevation info from eBird data
